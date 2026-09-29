@@ -245,8 +245,8 @@ MonoBehaviour:
     y: 0
     width: 308.00006
     height: 546.4
-  m_MinSize: {x: 52, y: 76}
-  m_MaxSize: {x: 4002, y: 4026}
+  m_MinSize: {x: 50, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 13}
   m_Panes:
   - {fileID: 13}
@@ -729,8 +729,7 @@ MonoBehaviour:
       m_LastClickedID:
         m_rawData: 0
       m_ExpandedIDs:
-      - m_rawData: 568105589213694298
-      - m_rawData: 568105589213696764
+      - m_rawData: 568105589213756042
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1410,9 +1409,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 202.77814, y: 292.83414, z: -3.9862723}
+    m_Target: {x: 12.854269, y: 229.29565, z: -9.532784}
     speed: 2
-    m_Value: {x: 202.77814, y: 292.83414, z: -3.9862723}
+    m_Value: {x: -17.75153, y: 225.8603, z: -10.015289}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1442,7 +1441,7 @@ MonoBehaviour:
       m_Fade:
         m_Target: 0
         speed: 2
-        m_Value: 1
+        m_Value: 0
       m_Color: {r: 0.5, g: 0.5, b: 0.5, a: 0.4}
       m_OffsetAlongAxis: {x: 0, y: 0, z: 0}
       m_Size: {x: 1, y: 1}
@@ -1463,9 +1462,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 469.3379
+    m_Target: 1023.9927
     speed: 2
-    m_Value: 469.3379
+    m_Value: 1072.2437
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1552,7 +1551,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets
+    - Assets/Scripts
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1562,22 +1561,22 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 60
   m_LastFolders:
-  - Assets
+  - Assets/Scripts
   m_LastFoldersGridSize: 60
-  m_LastProjectPath: D:\UNITY\MyProjects\AriTuner
+  m_LastProjectPath: D:\UNITY\MyProjects\ari-tuner\AriTuner
   m_LockTracker:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
     scrollPos: {x: 0, y: 79}
     m_SelectedIDs:
-    - m_rawData: 568105584918858090
+    - m_rawData: 568105584918842274
     m_LastClickedID:
-      m_rawData: 568105584918858090
+      m_rawData: 568105584918842274
     m_ExpandedIDs:
-    - m_rawData: 568105589213696022
+    - m_rawData: 568105589213755500
     - m_rawData: 0
-    - m_rawData: 568105584918858090
+    - m_rawData: 568105584918841972
     - m_rawData: 568105587066273791
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1610,7 +1609,9 @@ MonoBehaviour:
     m_SelectedIDs: []
     m_LastClickedID:
       m_rawData: 0
-    m_ExpandedIDs: []
+    m_ExpandedIDs:
+    - m_rawData: 0
+    - m_rawData: 568105584918841972
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1641,7 +1642,7 @@ MonoBehaviour:
     m_SelectedInstanceIDs: []
     m_LastClickedEntityId:
       m_rawData: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:
       m_UserAcceptedRename: 0

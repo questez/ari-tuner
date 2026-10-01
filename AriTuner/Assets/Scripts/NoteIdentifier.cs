@@ -1,8 +1,11 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.InputSystem;
 
 public class NoteIdentifier : MonoBehaviour
 {
+    [SerializeField] private AudioSource audioSource;
+
     private string currentMic = "";
     private AudioClip audioClip;
 
@@ -16,20 +19,45 @@ public class NoteIdentifier : MonoBehaviour
             }
 
             currentMic = Microphone.devices[0];
+        }
+    }
 
+    private void Update()
+    {
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard.spaceKey.wasPressedThisFrame)
+        {
             StartRecording(currentMic);
+        }
+
+        if (keyboard.ctrlKey.wasPressedThisFrame)
+        {
+            StopRecording(currentMic);
         }
     }
 
     private void StartRecording(string microphoneName)
     {
-        Microphone.Start(microphoneName, true, 4, 44100);
+        Debug.Log("Start record!!!");
+
+        if (Microphone.IsRecording(microphoneName))
+        {
+            Microphone.End(microphoneName);
+        }
+        
+        audioClip =  Microphone.Start(microphoneName, true, 4, 44100);        
+    }    
+
+    private void StopRecording(string microphoneName)
+    {
+        Debug.Log("Stop record!!!");
+
+        Microphone.End(microphoneName);
+        
+        audioSource.clip = audioClip;
+        audioSource.Play();
     }
-
-    //private void StopRecording()
-    //{
-
-    //}
 
     //private IEnumerator Recording()
     //{

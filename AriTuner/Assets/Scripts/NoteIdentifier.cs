@@ -1,69 +1,122 @@
 using UnityEngine;
-using System.Collections;
-using UnityEngine.InputSystem;
 
 public class NoteIdentifier : MonoBehaviour
 {
-    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private int sampleRate = 44100;
+    [SerializeField] private int recordingLength = 1;
+    [SerializeField] private int sampleSize = 8192;
 
+    private AudioClip microphoneClip;
     private string currentMic = "";
-    private AudioClip audioClip;
 
-    private void Start()
+    private float[] soundSamplesAmplitude;
+    
+    private void OnEnable()
     {
         if (Microphone.devices.Length > 0)
         {
-            foreach (string deviceName in Microphone.devices)
-            {
-                Debug.Log($"Microphone: {deviceName}");
-            }
-
             currentMic = Microphone.devices[0];
+
+            Debug.Log($"Using microphone: {currentMic}");            
+
+            StartRecording(currentMic);
+
+            soundSamplesAmplitude = new float[sampleSize];
         }
+        else
+        {
+            Debug.LogError("Microphone was not found!");
+        }
+    }
+
+    private void OnDisable()
+    {
+        StopRecording(currentMic);
     }
 
     private void Update()
     {
-        Keyboard keyboard = Keyboard.current;
+        if (!Microphone.IsRecording(currentMic)) return;
 
-        if (keyboard.spaceKey.wasPressedThisFrame)
-        {
-            StartRecording(currentMic);
-        }
+        int position = Microphone.GetPosition(currentMic);
 
-        if (keyboard.ctrlKey.wasPressedThisFrame)
-        {
-            StopRecording(currentMic);
-        }
+        if (position < sampleSize) return;
+
+        GetLatestSamples(position);
+
+        Debug.Log($"Note frequency: {DetectFrequency(soundSamplesAmplitude, sampleRate)} Hz");
     }
 
     private void StartRecording(string microphoneName)
     {
-        Debug.Log("Start record!!!");
-
         if (Microphone.IsRecording(microphoneName))
         {
             Microphone.End(microphoneName);
         }
         
-        audioClip =  Microphone.Start(microphoneName, true, 4, 44100);        
+        microphoneClip =  Microphone.Start(microphoneName, true, recordingLength, sampleRate);
+
+        Debug.Log("Start record!!!");
     }    
 
     private void StopRecording(string microphoneName)
     {
-        Debug.Log("Stop record!!!");
-
         Microphone.End(microphoneName);
-        
-        audioSource.clip = audioClip;
-        audioSource.Play();
+
+        Debug.Log("Stop record!!!");
     }
 
-    //private IEnumerator Recording()
-    //{
-    //    StartRecording();
-    //    yield return new WaitForSeconds(3f);
-    //    StopRecording();
-    //}
+    private void GetLatestSamples(int position)
+    {
+        int startPosition = position - sampleSize;
 
+        if (startPosition >= 0)
+        {
+            microphoneClip.GetData(soundSamplesAmplitude, startPosition);
+            return;
+        }
+
+        int samplesFromEnd = -startPosition;
+
+        float[] endSamples = new float[samplesFromEnd];
+        float[] startSamples = new float[sampleSize - samplesFromEnd];
+
+        microphoneClip.GetData(endSamples, microphoneClip.samples - samplesFromEnd);
+
+        microphoneClip.GetData(startSamples, 0);
+
+        System.Array.Copy(endSamples, 0, soundSamplesAmplitude, 0, endSamples.Length);
+
+        System.Array.Copy(startSamples, 0, soundSamplesAmplitude, endSamples.Length, startSamples.Length);
+    }
+
+    private float DetectFrequency(float[] samples, int sampleRate) // Autocorrelation algorithm
+    {
+        float bestCorrelation = 0f;
+        int bestLag = 0;
+
+        int minLag = Mathf.FloorToInt(sampleRate / 500f);
+        int maxLag = Mathf.CeilToInt(sampleRate / 25f);
+
+        for (int lag = minLag; lag <= maxLag; lag++)
+        {
+            float correlation = 0f;
+
+            for (int i = 0; i < samples.Length - lag; i++)
+            {
+                correlation += samples[i] * samples[i + lag];
+            }
+
+            if (correlation > bestCorrelation)
+            {
+                bestCorrelation = correlation;
+                bestLag = lag;
+            }
+        }
+
+        if (bestLag == 0)
+            return 0f;
+
+        return (float)sampleRate / bestLag;
+    }    
 }

@@ -9,8 +9,10 @@ public class NoteIdentifier : MonoBehaviour
     private AudioClip microphoneClip;
     private string currentMic = "";
 
-    private float[] soundSamplesAmplitude;
-    
+    private float[] soundSamplesAmplitude; // each array's element carries audio signal amplitude of each sample
+
+    private bool initialBufferReady = false;
+
     private void OnEnable()
     {
         if (Microphone.devices.Length > 0)
@@ -36,15 +38,33 @@ public class NoteIdentifier : MonoBehaviour
 
     private void Update()
     {
+        if (string.IsNullOrEmpty(currentMic)) return;
+
         if (!Microphone.IsRecording(currentMic)) return;
+
+        if (microphoneClip == null || soundSamplesAmplitude == null) return;
 
         int position = Microphone.GetPosition(currentMic);
 
-        if (position < sampleSize) return;
+        if (position < 0) return;
+
+
+        if (!initialBufferReady)
+        {
+            if (position < sampleSize)
+                return;
+
+            initialBufferReady = true;
+        }
 
         GetLatestSamples(position);
 
-        Debug.Log($"Note frequency: {DetectFrequency(soundSamplesAmplitude, sampleRate)} Hz");
+        float frequency = DetectFrequency(soundSamplesAmplitude, sampleRate);
+
+        if (frequency > 0f)
+        {
+            Debug.Log($"Note frequency: {frequency:F2} Hz");
+        }
     }
 
     private void StartRecording(string microphoneName)
@@ -68,55 +88,100 @@ public class NoteIdentifier : MonoBehaviour
 
     private void GetLatestSamples(int position)
     {
+        if (microphoneClip == null)
+            return;
+
+        int clipLength = microphoneClip.samples;
+
+        if (clipLength < sampleSize)
+            return;
+
         int startPosition = position - sampleSize;
 
-        if (startPosition >= 0)
+        if (startPosition < 0)
         {
-            microphoneClip.GetData(soundSamplesAmplitude, startPosition);
-            return;
+            startPosition += clipLength;
         }
 
-        int samplesFromEnd = -startPosition;
+        bool success = microphoneClip.GetData(
+            soundSamplesAmplitude,
+            startPosition
+        );
 
-        float[] endSamples = new float[samplesFromEnd];
-        float[] startSamples = new float[sampleSize - samplesFromEnd];
-
-        microphoneClip.GetData(endSamples, microphoneClip.samples - samplesFromEnd);
-
-        microphoneClip.GetData(startSamples, 0);
-
-        System.Array.Copy(endSamples, 0, soundSamplesAmplitude, 0, endSamples.Length);
-
-        System.Array.Copy(startSamples, 0, soundSamplesAmplitude, endSamples.Length, startSamples.Length);
+        if (!success)
+        {
+            Debug.LogWarning("Failed to get audio samples!");
+        }
     }
 
     private float DetectFrequency(float[] samples, int sampleRate) // Autocorrelation algorithm
     {
-        float bestCorrelation = 0f;
-        int bestLag = 0;
+        float mean = 0f;
+
+        for (int i = 0; i < samples.Length; i++)
+        {
+            mean += samples[i];
+        }
+
+        mean /= samples.Length;
+
+
+        float squareSum = 0f;
+
+        for (int i = 0; i < samples.Length; i++)
+        {
+            float value = samples[i] - mean;
+            squareSum += value * value;
+        }
+
+        float rms = Mathf.Sqrt(squareSum / samples.Length); // RMS (Root Mean Square)
+        
+        if (rms < 0.01f)
+            return 0f;
+
 
         int minLag = Mathf.FloorToInt(sampleRate / 500f);
         int maxLag = Mathf.CeilToInt(sampleRate / 25f);
 
+        float[] correlations = new float[maxLag + 2];
+
         for (int lag = minLag; lag <= maxLag; lag++)
         {
             float correlation = 0f;
+            float energyA = 0f;
+            float energyB = 0f;
 
             for (int i = 0; i < samples.Length - lag; i++)
             {
-                correlation += samples[i] * samples[i + lag];
+                float a = samples[i] - mean;
+                float b = samples[i + lag] - mean;
+
+                correlation += a * b;
+                energyA += a * a;
+                energyB += b * b;
             }
 
-            if (correlation > bestCorrelation)
-            {
-                bestCorrelation = correlation;
-                bestLag = lag;
-            }
+            float denominator = Mathf.Sqrt(energyA * energyB);
+
+            if (denominator > 0f)
+                correlations[lag] = correlation / denominator;
         }
+        
+        const float correlationThreshold = 0.65f;
 
-        if (bestLag == 0)
-            return 0f;
+        for (int lag = minLag + 1; lag < maxLag; lag++)
+        {
+            bool isLocalPeak =
+                correlations[lag] >= correlations[lag - 1] &&
+                correlations[lag] > correlations[lag + 1];
 
-        return (float)sampleRate / bestLag;
+            if (isLocalPeak &&
+                correlations[lag] >= correlationThreshold)
+            {
+                return (float)sampleRate / lag;
+            }
+        }        
+
+        return 0f;
     }    
 }

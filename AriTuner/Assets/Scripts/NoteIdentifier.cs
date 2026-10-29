@@ -13,6 +13,9 @@ public class NoteIdentifier : MonoBehaviour
 
     private bool initialBufferReady = false;
 
+    private float smoothedFrequency = 0;
+    private const float smoothingCoefficient = 0.2f;
+
     private void OnEnable()
     {
         if (Microphone.devices.Length > 0)
@@ -63,6 +66,15 @@ public class NoteIdentifier : MonoBehaviour
 
         if (frequency > 0f)
         {
+            if (smoothedFrequency == 0)
+            {
+                smoothedFrequency = frequency;
+            }
+            else
+            {
+                smoothedFrequency = Mathf.Lerp(smoothedFrequency, frequency, smoothingCoefficient);
+            }           
+
             Debug.Log($"Note frequency: {frequency:F2} Hz");
         }
     }
@@ -88,9 +100,6 @@ public class NoteIdentifier : MonoBehaviour
 
     private void GetLatestSamples(int position)
     {
-        if (microphoneClip == null)
-            return;
-
         int clipLength = microphoneClip.samples;
 
         if (clipLength < sampleSize)
@@ -116,7 +125,7 @@ public class NoteIdentifier : MonoBehaviour
 
     private float DetectFrequency(float[] samples, int sampleRate) // Autocorrelation algorithm
     {
-        float mean = 0f;
+        float mean = 0f; // mean - среднее
 
         for (int i = 0; i < samples.Length; i++)
         {
@@ -163,20 +172,16 @@ public class NoteIdentifier : MonoBehaviour
 
             float denominator = Mathf.Sqrt(energyA * energyB);
 
-            if (denominator > 0f)
-                correlations[lag] = correlation / denominator;
+            if (denominator > 0f) correlations[lag] = correlation / denominator;
         }
         
         const float correlationThreshold = 0.65f;
 
         for (int lag = minLag + 1; lag < maxLag; lag++)
         {
-            bool isLocalPeak =
-                correlations[lag] >= correlations[lag - 1] &&
-                correlations[lag] > correlations[lag + 1];
+            bool isLocalPeak = correlations[lag] >= correlations[lag - 1] && correlations[lag] > correlations[lag + 1];
 
-            if (isLocalPeak &&
-                correlations[lag] >= correlationThreshold)
+            if (isLocalPeak && correlations[lag] >= correlationThreshold)
             {
                 return (float)sampleRate / lag;
             }

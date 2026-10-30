@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class NoteIdentifier : MonoBehaviour
@@ -16,6 +17,9 @@ public class NoteIdentifier : MonoBehaviour
     private float smoothedFrequency = 0;
     private const float smoothingCoefficient = 0.2f;
 
+    private float note_A_frequency = 440f;
+    private readonly string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
     private void OnEnable()
     {
         if (Microphone.devices.Length > 0)
@@ -28,6 +32,7 @@ public class NoteIdentifier : MonoBehaviour
 
             soundSamplesAmplitude = new float[sampleSize];
         }
+
         else
         {
             Debug.LogError("Microphone was not found!");
@@ -51,7 +56,6 @@ public class NoteIdentifier : MonoBehaviour
 
         if (position < 0) return;
 
-
         if (!initialBufferReady)
         {
             if (position < sampleSize)
@@ -73,9 +77,11 @@ public class NoteIdentifier : MonoBehaviour
             else
             {
                 smoothedFrequency = Mathf.Lerp(smoothedFrequency, frequency, smoothingCoefficient);
-            }           
+            }
 
-            Debug.Log($"Note frequency: {frequency:F2} Hz");
+
+            Debug.Log($"Frequency: {smoothedFrequency:F2} Hz");
+            Debug.Log($"Note: {GetNoteName(smoothedFrequency)}");
         }
     }
 
@@ -112,10 +118,7 @@ public class NoteIdentifier : MonoBehaviour
             startPosition += clipLength;
         }
 
-        bool success = microphoneClip.GetData(
-            soundSamplesAmplitude,
-            startPosition
-        );
+        bool success = microphoneClip.GetData(soundSamplesAmplitude, startPosition);
 
         if (!success)
         {
@@ -188,5 +191,18 @@ public class NoteIdentifier : MonoBehaviour
         }        
 
         return 0f;
-    }    
+    }
+
+    private string GetNoteName(float frequency)
+    {
+        int n = Mathf.RoundToInt(12f * Mathf.Log(frequency / note_A_frequency, 2));
+
+        int noteIndex = (n + 9) % 12;
+
+        if (noteIndex < 0) noteIndex += 12;
+
+        int octave = 4 + Mathf.FloorToInt((n + 9) / 12f);
+
+        return $"{noteNames[noteIndex]}{octave}";
+    }
 }
